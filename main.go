@@ -23,6 +23,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var version = "dev"
+
 func main() {
 	fs := flag.NewFlagSet("http-proxy", flag.ExitOnError)
 	var (
@@ -200,6 +202,10 @@ func usageFor(fs *flag.FlagSet, short string) func() {
 			fmt.Fprintf(tw, "  -%s %s\t%s\n", f.Name, f.DefValue, f.Usage)
 		})
 		tw.Flush()
+		fmt.Fprintf(os.Stderr, "\n")
+		fmt.Fprintf(os.Stderr, "VERSION\n")
+		fmt.Fprintf(os.Stderr, "  %s\n", version)
+		fmt.Fprintf(os.Stderr, "\n")
 	}
 }
 
