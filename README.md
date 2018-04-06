@@ -1,7 +1,8 @@
 # http-proxy
 
-An HTTP server that proxies all requests to other HTTP servers on localhost,
-based on the incoming request's Host header.
+An HTTP server that proxies all requests to other HTTP servers on localhost, or
+file servers rooted in a path on disk, based on the incoming request's Host
+header.
 
 ## Installation
 
@@ -29,6 +30,6 @@ proxy.conf
 ```
 example.com, www.example.com: 8081
 subdomain.example.com: 8082
-www.website.online: 9091
+www.website.online: /var/www/website.online
 ```
 

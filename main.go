@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"sync/atomic"
 	"syscall"
@@ -38,7 +39,7 @@ func main() {
 	if *example {
 		fmt.Fprintf(os.Stdout, "example.com, www.example.com: 8081\n")
 		fmt.Fprintf(os.Stdout, "subdomain.example.com: 10001\n")
-		fmt.Fprintf(os.Stdout, "www.website.online: 9091\n")
+		fmt.Fprintf(os.Stdout, "www.website.online: /var/www/website.online\n")
 		os.Exit(0)
 	}
 
@@ -57,11 +58,11 @@ func main() {
 			cfg := cfgmap.Load().(configuration)
 			proxy, ok := cfg[r.Host]
 			if !ok {
-				log.Printf("%s: %s -> not configured", r.RemoteAddr, r.Host)
+				log.Printf("%s %s -> not configured", r.RemoteAddr, r.Host)
 				http.NotFound(w, r)
 				return
 			}
-			log.Printf("%s: %s -> :%s", r.RemoteAddr, r.Host, proxy.port)
+			log.Printf("%s %s -> %s", r.RemoteAddr, r.Host, proxy.dest)
 			proxy.ServeHTTP(w, r)
 		})
 	}
@@ -141,7 +142,7 @@ func main() {
 type configuration map[string]target
 
 type target struct {
-	port string
+	dest string
 	http.Handler
 }
 
@@ -161,17 +162,23 @@ func loadcfg(filename string) (configuration, error) {
 		if len(toks) != 2 {
 			return cfg, errors.Errorf("bad line: %s", s.Text())
 		}
-
-		hosts, port := toks[0], strings.TrimSpace(toks[1])
+		var (
+			hosts, dest = toks[0], strings.TrimSpace(toks[1])
+			handler     http.Handler
+		)
+		if _, err := strconv.Atoi(dest); err == nil {
+			hostport := net.JoinHostPort("127.0.0.1", dest)
+			u := &url.URL{Scheme: "http", Host: hostport}
+			handler = httputil.NewSingleHostReverseProxy(u)
+		} else if fi, err := os.Stat(dest); err == nil && fi.IsDir() {
+			handler = http.FileServer(http.Dir(dest))
+		} else {
+			return cfg, errors.Errorf("invalid proxy target: %s", s.Text())
+		}
 		for _, host := range strings.Split(hosts, ",") {
-			var (
-				src   = strings.TrimSpace(host)
-				dst   = net.JoinHostPort("127.0.0.1", port)
-				u     = &url.URL{Scheme: "http", Host: dst}
-				proxy = httputil.NewSingleHostReverseProxy(u)
-			)
-			log.Printf("loadcfg: '%s' -> %s", src, dst)
-			cfg[host] = target{port: port, Handler: proxy}
+			src := strings.TrimSpace(host)
+			log.Printf("loadcfg %s -> %s", src, dest)
+			cfg[src] = target{dest: dest, Handler: handler}
 		}
 	}
 
