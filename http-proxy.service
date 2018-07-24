@@ -1,0 +1,11 @@
+[Unit]
+Description=http-proxy
+
+[Service]
+ExecStart=/opt/http-proxy/http-proxy -cert /opt/http-proxy/server.crt -key /opt/http-proxy/server.key -config /opt/http-proxy/proxy.conf -http :80 -tls :443
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
