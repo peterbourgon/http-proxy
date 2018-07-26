@@ -1,9 +1,13 @@
 [Unit]
 Description=http-proxy
+Documentation=https://github.com/peterbourgon/http-proxy
+Wants=network-online.target
+After=network-online.target
 
 [Service]
-ExecStart=/opt/http-proxy/http-proxy -cert /opt/http-proxy/server.crt -key /opt/http-proxy/server.key -config /opt/http-proxy/proxy.conf -http :80 -tls :443
+ExecStart=/opt/http-proxy/http-proxy -http ':80' -tls ':443' -cert /opt/http-proxy/server.crt -key /opt/http-proxy/server.key -config /opt/http-proxy/proxy.conf
 ExecReload=/bin/kill -HUP $MAINPID
+ExecStop=/bin/kill -INT $MAINPID
 Restart=always
 RestartSec=1
 
