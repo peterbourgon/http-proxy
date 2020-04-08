@@ -60,11 +60,11 @@ func main() {
 			cfg := cfgmap.Load().(configuration)
 			proxy, ok := cfg[r.Host]
 			if !ok {
-				log.Printf("%s %s -> not configured", r.RemoteAddr, r.Host)
+				log.Printf("%s %s (%s) -> not configured", r.RemoteAddr, r.Host, r.URL.Path)
 				http.NotFound(w, r)
 				return
 			}
-			log.Printf("%s %s -> %s", r.RemoteAddr, r.Host, proxy.dest)
+			log.Printf("%s %s (%s) -> %s", r.RemoteAddr, r.Host, r.URL.Path, proxy.dest)
 			proxy.ServeHTTP(w, r)
 		})
 	}
